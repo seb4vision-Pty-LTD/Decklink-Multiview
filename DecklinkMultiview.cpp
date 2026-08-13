@@ -24,6 +24,10 @@ enum class GridLayoutMode
     Grid3x3
 };
 
+// Compositor always renders onto this fixed canvas; the sink scales it to fit the actual window.
+constexpr int kCanvasWidth = 1920;
+constexpr int kCanvasHeight = 1080;
+
 class MultiviewWindow : public QMainWindow
 {
 public:
@@ -43,34 +47,7 @@ public:
             busPollTimer_->stop();
         }
 
-        if (compositor_)
-        {
-            for (auto* pad : sourcePads_)
-            {
-                if (pad)
-                {
-                    gst_element_release_request_pad(compositor_, pad);
-                    gst_object_unref(pad);
-                }
-            }
-            sourcePads_.clear();
-
-            gst_object_unref(compositor_);
-            compositor_ = nullptr;
-        }
-
-        if (sink_)
-        {
-            gst_object_unref(sink_);
-            sink_ = nullptr;
-        }
-
-        if (pipeline_)
-        {
-            gst_element_set_state(pipeline_, GST_STATE_NULL);
-            gst_object_unref(pipeline_);
-            pipeline_ = nullptr;
-        }
+        teardownPipeline();
     }
 
 protected:
@@ -135,8 +112,7 @@ private:
 
         connect(layoutSelector_, &QComboBox::currentIndexChanged, this, [this](int index)
             {
-                currentLayout_ = (index == 0) ? GridLayoutMode::Grid2x2 : GridLayoutMode::Grid3x3;
-                applyLayout(currentLayout_);
+                switchLayout((index == 0) ? GridLayoutMode::Grid2x2 : GridLayoutMode::Grid3x3);
             });
 
         connect(fullscreenButton_, &QPushButton::clicked, this, [this]()
@@ -147,19 +123,119 @@ private:
 
     void setupPipeline()
     {
-        QString pipelineDescription =
-            "glvideomixer name=mix background=1 ! "
-            "glcolorconvert ! gldownload ! queue max-size-buffers=3 leaky=downstream ! videoconvert ! d3d11videosink name=vsink sync=false ";
+        busPollTimer_ = new QTimer(this);
+        connect(busPollTimer_, &QTimer::timeout, this, [this]()
+            {
+                processBusMessages();
+            });
+        busPollTimer_->start(50);
 
-        for (int device = 0; device < 4; ++device)
+        buildPipeline(currentLayout_);
+    }
+
+    static int feedCountFor(GridLayoutMode mode)
+    {
+        return (mode == GridLayoutMode::Grid2x2) ? 4 : 8;
+    }
+
+    // Computes the on-canvas rectangle for every cell of the grid (9 cells for 3x3, only 8 are used).
+    static std::vector<CellPlacement> computeGridPlacements(GridLayoutMode mode)
+    {
+        std::vector<CellPlacement> placements;
+
+        if (mode == GridLayoutMode::Grid2x2)
         {
+            const int cellW = kCanvasWidth / 2;
+            const int cellH = kCanvasHeight / 2;
+
+            placements = {
+                {0, 0, cellW, cellH},
+                {cellW, 0, kCanvasWidth - cellW, cellH},
+                {0, cellH, cellW, kCanvasHeight - cellH},
+                {cellW, cellH, kCanvasWidth - cellW, kCanvasHeight - cellH}
+            };
+        }
+        else
+        {
+            const int cellW = kCanvasWidth / 3;
+            const int cellH = kCanvasHeight / 3;
+
+            placements.reserve(9);
+            for (int row = 0; row < 3; ++row)
+            {
+                for (int col = 0; col < 3; ++col)
+                {
+                    const int x = col * cellW;
+                    const int y = row * cellH;
+                    const int w = (col == 2) ? (kCanvasWidth - x) : cellW;
+                    const int h = (row == 2) ? (kCanvasHeight - y) : cellH;
+                    placements.push_back({ x, y, w, h });
+                }
+            }
+        }
+
+        return placements;
+    }
+
+    void teardownPipeline()
+    {
+        if (compositor_)
+        {
+            for (auto* pad : sourcePads_)
+            {
+                if (pad)
+                {
+                    gst_element_release_request_pad(compositor_, pad);
+                    gst_object_unref(pad);
+                }
+            }
+            sourcePads_.clear();
+
+            gst_object_unref(compositor_);
+            compositor_ = nullptr;
+        }
+
+        if (sink_)
+        {
+            gst_object_unref(sink_);
+            sink_ = nullptr;
+        }
+
+        if (pipeline_)
+        {
+            gst_element_set_state(pipeline_, GST_STATE_NULL);
+            gst_object_unref(pipeline_);
+            pipeline_ = nullptr;
+        }
+    }
+
+    // Builds and starts a fresh pipeline sized for the given layout; each source is pre-scaled to
+    // its exact cell size before glupload, so the compositor never has to scale anything itself.
+    void buildPipeline(GridLayoutMode mode)
+    {
+        const int feedCount = feedCountFor(mode);
+        const std::vector<CellPlacement> placements = computeGridPlacements(mode);
+
+        QString pipelineDescription =
+            QString("glvideomixer name=mix background=1 ! "
+                "video/x-raw(memory:GLMemory),width=%1,height=%2 ! "
+                "glcolorconvert ! gldownload ! queue max-size-buffers=3 leaky=downstream ! "
+                "videoconvert ! d3d11videosink name=vsink sync=false ")
+                .arg(kCanvasWidth)
+                .arg(kCanvasHeight);
+
+        for (int device = 0; device < feedCount; ++device)
+        {
+            const CellPlacement& c = placements[device];
             pipelineDescription += QString(
                 "decklinkvideosrc device-number=%1 mode=2160p50 ! "
                 "video/x-raw,width=3840,height=2160,framerate=50/1 ! "
-                "videoconvert ! videoscale ! video/x-raw,format=BGRA ! "
+                "videoconvert ! videoscale ! video/x-raw,width=%2,height=%3,format=BGRA ! "
                 "glupload ! glcolorconvert ! "
                 "queue max-size-buffers=1 max-size-bytes=0 max-size-time=0 leaky=downstream ! mix.sink_%1 ")
-                .arg(device);
+                .arg(device)
+                .arg(c.width)
+                .arg(c.height);
         }
 
         GError* parseError = nullptr;
@@ -185,8 +261,8 @@ private:
             return;
         }
 
-        sourcePads_.reserve(4);
-        for (int device = 0; device < 4; ++device)
+        sourcePads_.reserve(feedCount);
+        for (int device = 0; device < feedCount; ++device)
         {
             const QString padName = QString("sink_%1").arg(device);
             GstPad* mixerPad = gst_element_get_static_pad(compositor_, padName.toUtf8().constData());
@@ -195,6 +271,16 @@ private:
                 QMessageBox::critical(this, "GStreamer Error", "Could not get compositor pad: " + padName);
                 return;
             }
+
+            const CellPlacement& c = placements[device];
+            g_object_set(mixerPad,
+                "xpos", c.x,
+                "ypos", c.y,
+                "width", c.width,
+                "height", c.height,
+                "alpha", 1.0,
+                nullptr);
+
             sourcePads_.push_back(mixerPad);
         }
 
@@ -203,98 +289,19 @@ private:
             gst_video_overlay_set_window_handle(GST_VIDEO_OVERLAY(sink_), static_cast<guintptr>(videoWidget_->winId()));
         }
 
-        busPollTimer_ = new QTimer(this);
-        connect(busPollTimer_, &QTimer::timeout, this, [this]()
-            {
-                processBusMessages();
-            });
-        busPollTimer_->start(50);
-
-        applyLayout(currentLayout_);
         gst_element_set_state(pipeline_, GST_STATE_PLAYING);
     }
 
-    void applyLayout(GridLayoutMode mode)
+    void switchLayout(GridLayoutMode mode)
     {
-        if (sourcePads_.empty())
+        if (mode == currentLayout_ && pipeline_)
         {
             return;
         }
 
-        const int width = std::max(1, videoWidget_->width());
-        const int height = std::max(1, videoWidget_->height());
-
-        std::vector<CellPlacement> placements;
-        placements.reserve(9);
-
-        if (mode == GridLayoutMode::Grid2x2)
-        {
-            const int cellW = width / 2;
-            const int cellH = height / 2;
-
-            placements = {
-                {0, 0, cellW, cellH},
-                {cellW, 0, width - cellW, cellH},
-                {0, cellH, cellW, height - cellH},
-                {cellW, cellH, width - cellW, height - cellH}
-            };
-        }
-        else
-        {
-            const int cellW = width / 3;
-            const int cellH = height / 3;
-
-            for (int row = 0; row < 3; ++row)
-            {
-                for (int col = 0; col < 3; ++col)
-                {
-                    const int x = col * cellW;
-                    const int y = row * cellH;
-                    const int w = (col == 2) ? (width - x) : cellW;
-                    const int h = (row == 2) ? (height - y) : cellH;
-                    placements.push_back({ x, y, w, h });
-                }
-            }
-        }
-
-        for (size_t i = 0; i < sourcePads_.size(); ++i)
-        {
-            GstPad* pad = sourcePads_[i];
-            if (!pad)
-            {
-                continue;
-            }
-
-            if (mode == GridLayoutMode::Grid2x2)
-            {
-                if (i < 4)
-                {
-                    const auto& c = placements[i];
-                    g_object_set(pad,
-                        "xpos", c.x,
-                        "ypos", c.y,
-                        "width", c.width,
-                        "height", c.height,
-                        "alpha", 1.0,
-                        nullptr);
-                }
-                else
-                {
-                    g_object_set(pad, "alpha", 0.0, nullptr);
-                }
-            }
-            else
-            {
-                const auto& c = placements[i];
-                g_object_set(pad,
-                    "xpos", c.x,
-                    "ypos", c.y,
-                    "width", c.width,
-                    "height", c.height,
-                    "alpha", 1.0,
-                    nullptr);
-            }
-        }
+        teardownPipeline();
+        currentLayout_ = mode;
+        buildPipeline(currentLayout_);
     }
 
     void processBusMessages()
