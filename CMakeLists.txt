@@ -16,7 +16,7 @@ else()
 	set(QT_LIBS Qt5::Widgets)
 endif()
 
-add_executable(DecklinkMultiview DecklinkMultiview.cpp)
+add_executable(DecklinkMultiview DecklinkMultiview.cpp StatusWindow.cpp StatusWindow.h)
 
 target_include_directories(DecklinkMultiview PRIVATE ${GSTREAMER_INCLUDE_DIRS})
 target_link_directories(DecklinkMultiview PRIVATE ${GSTREAMER_LIBRARY_DIRS})

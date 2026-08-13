@@ -7,6 +7,9 @@
     <ClCompile Include="C:\Users\sipho-mancam\source\repos\DecklinkMultiview\DecklinkMultiview\DecklinkMultiview.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="C:\Users\sipho-mancam\source\repos\DecklinkMultiview\DecklinkMultiview\StatusWindow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="C:\Users\sipho-mancam\source\repos\DecklinkMultiview\DecklinkMultiview\build\DecklinkMultiview_autogen\mocs_compilation_Release.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -18,9 +21,17 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="C:\Users\sipho-mancam\source\repos\DecklinkMultiview\DecklinkMultiview\StatusWindow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
     <CustomBuild Include="C:\Users\sipho-mancam\source\repos\DecklinkMultiview\DecklinkMultiview\CMakeLists.txt" />
   </ItemGroup>
   <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{FEA4F5C1-C22C-3E0D-80A3-0F1768B4A4F1}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source Files">
       <UniqueIdentifier>{D68E7B60-754A-335B-8860-F0499BE90E0E}</UniqueIdentifier>
     </Filter>

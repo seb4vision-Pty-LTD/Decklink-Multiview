@@ -4,3 +4,4 @@ C:\Users\sipho-mancam\source\repos\DecklinkMultiview\DecklinkMultiview\build\Rel
 C:\Users\sipho-mancam\source\repos\DecklinkMultiview\DecklinkMultiview\build\Release\intl-8.dll
 C:\Users\sipho-mancam\source\repos\DecklinkMultiview\DecklinkMultiview\build\Release\pcre2-8.dll
 C:\Users\sipho-mancam\source\repos\DecklinkMultiview\DecklinkMultiview\build\Release\ffi-8.dll
+C:\Users\sipho-mancam\source\repos\DecklinkMultiview\DecklinkMultiview\build\DecklinkMultiview.dir\Release\Decklink.AA2BCA8E.Up2Date

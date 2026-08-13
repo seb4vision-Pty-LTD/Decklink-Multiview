@@ -1,4 +1,0 @@
-﻿  DecklinkMultiview.cpp
-C:\Qt\6.11.1\msvc2022_64\include\QtCore\qcompilerdetection.h(1331,1): error C1189: #error:  "Qt requires a C++17 compiler, and a suitable value for __cplusplus. On MSVC, you must pass the /Zc:__cplusplus option to the compiler."
-  (compiling source file 'DecklinkMultiview.cpp')
-  

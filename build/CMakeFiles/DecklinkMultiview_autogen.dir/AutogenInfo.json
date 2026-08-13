@@ -339,7 +339,15 @@
 	"CROSS_CONFIG" : false,
 	"DEP_FILE" : "",
 	"DEP_FILE_RULE_NAME" : "",
-	"HEADERS" : [],
+	"HEADERS" : 
+	[
+		[
+			"C:/Users/sipho-mancam/source/repos/DecklinkMultiview/DecklinkMultiview/StatusWindow.h",
+			"Mu",
+			"EWIEGA46WW/moc_StatusWindow.cpp",
+			null
+		]
+	],
 	"HEADER_EXTENSIONS" : [ "h", "hh", "h++", "hm", "hpp", "hxx", "in", "txx" ],
 	"INCLUDE_DIR" : "C:/Users/sipho-mancam/source/repos/DecklinkMultiview/DecklinkMultiview/build/DecklinkMultiview_autogen/include",
 	"INCLUDE_DIR_Debug" : "C:/Users/sipho-mancam/source/repos/DecklinkMultiview/DecklinkMultiview/build/DecklinkMultiview_autogen/include_Debug",
@@ -502,6 +510,11 @@
 	[
 		[
 			"C:/Users/sipho-mancam/source/repos/DecklinkMultiview/DecklinkMultiview/DecklinkMultiview.cpp",
+			"Mu",
+			null
+		],
+		[
+			"C:/Users/sipho-mancam/source/repos/DecklinkMultiview/DecklinkMultiview/StatusWindow.cpp",
 			"Mu",
 			null
 		]

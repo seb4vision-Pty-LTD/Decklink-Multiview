@@ -1,13 +1,16 @@
 #include <QApplication>
 #include <QComboBox>
 #include <QDebug>
+#include <QElapsedTimer>
 #include <QHBoxLayout>
 #include <QKeyEvent>
 #include <QMainWindow>
 #include <QMessageBox>
 #include <QPushButton>
 #include <QResizeEvent>
+#include <QShowEvent>
 #include <QString>
+#include <QTime>
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QWidget>
@@ -16,13 +19,19 @@
 #include <gst/video/videooverlay.h>
 
 #include <algorithm>
+#include <atomic>
+#include <memory>
+#include <optional>
 #include <vector>
+
+#include "StatusWindow.h"
 
 enum class GridLayoutMode
 {
     Grid2x2,
     Grid3x3
 };
+
 
 // Compositor always renders onto this fixed canvas; the sink scales it to fit the actual window.
 constexpr int kCanvasWidth = 1920;
@@ -47,10 +56,27 @@ public:
             busPollTimer_->stop();
         }
 
+        if (statusTimer_)
+        {
+            statusTimer_->stop();
+        }
+
         teardownPipeline();
     }
 
 protected:
+    void showEvent(QShowEvent* event) override
+    {
+        QMainWindow::showEvent(event);
+
+        // Position/show only once real on-screen geometry is available (before show(), x()/y() are unreliable).
+        if (statusWindow_ && !statusWindow_->isVisible())
+        {
+            statusWindow_->move(x() + frameGeometry().width() + 10, y());
+            statusWindow_->show();
+        }
+    }
+
     void resizeEvent(QResizeEvent* event) override
     {
         QMainWindow::resizeEvent(event);
@@ -95,9 +121,11 @@ private:
         layoutSelector_->addItem("3x3");
 
         fullscreenButton_ = new QPushButton("Fullscreen (F11)", this);
+        statsButton_ = new QPushButton("Status", this);
 
         topBar->addWidget(layoutSelector_);
         topBar->addWidget(fullscreenButton_);
+        topBar->addWidget(statsButton_);
         topBar->addStretch();
 
         videoWidget_ = new QWidget(this);
@@ -119,6 +147,15 @@ private:
             {
                 toggleFullscreen();
             });
+
+        statusWindow_ = new StatusWindow(this);
+
+        connect(statsButton_, &QPushButton::clicked, this, [this]()
+            {
+                statusWindow_->show();
+                statusWindow_->raise();
+                statusWindow_->activateWindow();
+            });
     }
 
     void setupPipeline()
@@ -130,7 +167,41 @@ private:
             });
         busPollTimer_->start(50);
 
+        statusTimer_ = new QTimer(this);
+        connect(statusTimer_, &QTimer::timeout, this, [this]()
+            {
+                updateStatus();
+            });
+        statusTimer_->start(1000);
+
         buildPipeline(currentLayout_);
+    }
+
+    void updateStatus()
+    {
+        const qint64 elapsedMs = pipelineClock_.isValid() ? pipelineClock_.elapsed() : 0;
+        statusWindow_->setUptime(QTime(0, 0).addMSecs(static_cast<int>(elapsedMs)).toString("HH:mm:ss"));
+
+        const auto cpuTemp = queryCpuTemperatureCelsius();
+        statusWindow_->setCpuTemperature(cpuTemp ? QString::number(*cpuTemp, 'f', 1) + " C" : "N/A");
+
+        const auto gpuTemp = queryGpuTemperatureCelsius();
+        statusWindow_->setGpuTemperature(gpuTemp ? QString::number(*gpuTemp, 'f', 1) + " C" : "N/A");
+
+        for (size_t i = 0; i < frameCounters_.size(); ++i)
+        {
+            const guint64 frames = frameCounters_[i]->exchange(0, std::memory_order_relaxed);
+            statusWindow_->setFeedFps(static_cast<int>(i), static_cast<double>(frames));
+        }
+    }
+
+    static GstPadProbeReturn countFrameProbe(GstPad*, GstPadProbeInfo* info, gpointer userData)
+    {
+        if (GST_PAD_PROBE_INFO_TYPE(info) & GST_PAD_PROBE_TYPE_BUFFER)
+        {
+            static_cast<std::atomic<guint64>*>(userData)->fetch_add(1, std::memory_order_relaxed);
+        }
+        return GST_PAD_PROBE_OK;
     }
 
     static int feedCountFor(GridLayoutMode mode)
@@ -207,6 +278,8 @@ private:
             gst_object_unref(pipeline_);
             pipeline_ = nullptr;
         }
+
+        frameCounters_.clear();
     }
 
     // Builds and starts a fresh pipeline sized for the given layout; each source is pre-scaled to
@@ -215,6 +288,13 @@ private:
     {
         const int feedCount = feedCountFor(mode);
         const std::vector<CellPlacement> placements = computeGridPlacements(mode);
+
+        frameCounters_.clear();
+        for (int i = 0; i < feedCount; ++i)
+        {
+            frameCounters_.push_back(std::make_unique<std::atomic<guint64>>(0));
+        }
+        statusWindow_->setFeedCount(feedCount);
 
         QString pipelineDescription =
             QString("glvideomixer name=mix background=1 ! "
@@ -281,6 +361,8 @@ private:
                 "alpha", 1.0,
                 nullptr);
 
+            gst_pad_add_probe(mixerPad, GST_PAD_PROBE_TYPE_BUFFER, countFrameProbe, frameCounters_[device].get(), nullptr);
+
             sourcePads_.push_back(mixerPad);
         }
 
@@ -289,6 +371,7 @@ private:
             gst_video_overlay_set_window_handle(GST_VIDEO_OVERLAY(sink_), static_cast<guintptr>(videoWidget_->winId()));
         }
 
+        pipelineClock_.restart();
         gst_element_set_state(pipeline_, GST_STATE_PLAYING);
     }
 
@@ -384,13 +467,18 @@ private:
     QWidget* videoWidget_ = nullptr;
     QComboBox* layoutSelector_ = nullptr;
     QPushButton* fullscreenButton_ = nullptr;
+    QPushButton* statsButton_ = nullptr;
+    StatusWindow* statusWindow_ = nullptr;
 
     GstElement* pipeline_ = nullptr;
     GstElement* compositor_ = nullptr;
     GstElement* sink_ = nullptr;
     QTimer* busPollTimer_ = nullptr;
+    QTimer* statusTimer_ = nullptr;
+    QElapsedTimer pipelineClock_;
 
     std::vector<GstPad*> sourcePads_;
+    std::vector<std::unique_ptr<std::atomic<guint64>>> frameCounters_;
     GridLayoutMode currentLayout_ = GridLayoutMode::Grid2x2;
 };
 
@@ -400,7 +488,7 @@ int main(int argc, char* argv[])
 
     QApplication app(argc, argv);
     MultiviewWindow window;
-    window.show();
+    window.showMaximized();
 
     return app.exec();
 }

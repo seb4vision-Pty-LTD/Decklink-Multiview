@@ -442,6 +442,8 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="C:\Users\sipho-mancam\source\repos\DecklinkMultiview\DecklinkMultiview\DecklinkMultiview.cpp" />
+    <ClCompile Include="C:\Users\sipho-mancam\source\repos\DecklinkMultiview\DecklinkMultiview\StatusWindow.cpp" />
+    <ClInclude Include="C:\Users\sipho-mancam\source\repos\DecklinkMultiview\DecklinkMultiview\StatusWindow.h" />
     <ClCompile Include="C:\Users\sipho-mancam\source\repos\DecklinkMultiview\DecklinkMultiview\build\DecklinkMultiview_autogen\mocs_compilation_Release.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">true</ExcludedFromBuild>
