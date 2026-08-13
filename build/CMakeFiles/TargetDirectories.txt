@@ -1,0 +1,3 @@
+C:/Users/sipho-mancam/source/repos/DecklinkMultiview/DecklinkMultiview/build/CMakeFiles/DecklinkMultiview.dir
+C:/Users/sipho-mancam/source/repos/DecklinkMultiview/DecklinkMultiview/build/CMakeFiles/ALL_BUILD.dir
+C:/Users/sipho-mancam/source/repos/DecklinkMultiview/DecklinkMultiview/build/CMakeFiles/ZERO_CHECK.dir

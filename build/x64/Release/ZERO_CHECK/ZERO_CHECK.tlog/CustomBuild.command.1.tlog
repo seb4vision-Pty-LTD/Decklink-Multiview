@@ -1,0 +1,10 @@
+^C:\USERS\SIPHO-MANCAM\SOURCE\REPOS\DECKLINKMULTIVIEW\DECKLINKMULTIVIEW\BUILD\CMAKEFILES\C038664E14A343BA8599C67C3204D355\GENERATE.STAMP.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/sipho-mancam/source/repos/DecklinkMultiview/DecklinkMultiview -BC:/Users/sipho-mancam/source/repos/DecklinkMultiview/DecklinkMultiview/build --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/Users/sipho-mancam/source/repos/DecklinkMultiview/DecklinkMultiview/build/DecklinkMultiview.sln
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

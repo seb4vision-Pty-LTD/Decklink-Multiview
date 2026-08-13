@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\Users\sipho-mancam\source\repos\DecklinkMultiview\DecklinkMultiview\build\DecklinkMultiview_autogen\mocs_compilation_Debug.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sipho-mancam\source\repos\DecklinkMultiview\DecklinkMultiview\DecklinkMultiview.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sipho-mancam\source\repos\DecklinkMultiview\DecklinkMultiview\build\DecklinkMultiview_autogen\mocs_compilation_Release.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sipho-mancam\source\repos\DecklinkMultiview\DecklinkMultiview\build\DecklinkMultiview_autogen\mocs_compilation_MinSizeRel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sipho-mancam\source\repos\DecklinkMultiview\DecklinkMultiview\build\DecklinkMultiview_autogen\mocs_compilation_RelWithDebInfo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\sipho-mancam\source\repos\DecklinkMultiview\DecklinkMultiview\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{D68E7B60-754A-335B-8860-F0499BE90E0E}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

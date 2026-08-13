@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\sipho-mancam\source\repos\DecklinkMultiview\DecklinkMultiview\build\CMakeFiles\c038664e14a343ba8599c67c3204d355\generate.stamp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{E0AE265C-6C3D-3B0E-B942-9595DB38DD90}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

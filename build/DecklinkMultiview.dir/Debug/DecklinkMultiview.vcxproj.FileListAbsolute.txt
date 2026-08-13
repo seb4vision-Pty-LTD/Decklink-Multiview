@@ -1,0 +1,6 @@
+C:\Users\sipho-mancam\source\repos\DecklinkMultiview\DecklinkMultiview\build\Debug\gobject-2.0-0.dll
+C:\Users\sipho-mancam\source\repos\DecklinkMultiview\DecklinkMultiview\build\Debug\glib-2.0-0.dll
+C:\Users\sipho-mancam\source\repos\DecklinkMultiview\DecklinkMultiview\build\Debug\iconv-2.dll
+C:\Users\sipho-mancam\source\repos\DecklinkMultiview\DecklinkMultiview\build\Debug\intl-8.dll
+C:\Users\sipho-mancam\source\repos\DecklinkMultiview\DecklinkMultiview\build\Debug\pcre2-8.dll
+C:\Users\sipho-mancam\source\repos\DecklinkMultiview\DecklinkMultiview\build\Debug\ffi-8.dll

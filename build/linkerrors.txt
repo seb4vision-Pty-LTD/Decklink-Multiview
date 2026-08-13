@@ -1,0 +1,8 @@
+================================================================================
+Linker Errors
+Generated: 2026-08-13T16:35:55.759Z
+Total Errors: 1
+================================================================================
+
+[LNK1104] (MSVC)
+cannot open file 'C:\Users\sipho-mancam\source\repos\DecklinkMultiview\DecklinkMultiview\build\Release\DecklinkMultiview.exe' [C:\Users\sipho-mancam\source\repos\DecklinkMultiview\DecklinkMultiview\build\DecklinkMultiview.vcxproj]
